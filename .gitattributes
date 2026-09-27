@@ -1,0 +1,20 @@
+# Normalise line endings in the repository.
+#
+# This matters more than usual here: verify.mjs rebuilds lib/client.js in memory
+# and compares it byte for byte against the committed copy. If Git rewrote line
+# endings on checkout, that comparison would fail on a fresh clone for a bundle
+# that is perfectly up to date.
+#
+# LF everywhere in the repository. Windows tools that need CRLF (PowerShell does
+# not) can convert on checkout per the exceptions below.
+* text=auto eol=lf
+
+# Windows batch files genuinely require CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
