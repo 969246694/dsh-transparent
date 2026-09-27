@@ -69,7 +69,28 @@ plugin_manager install_bundle  <本仓库路径>
 config:
   alpha: 215          # 整窗不透明度
   darkTheme: true     # 强制界面使用黑夜主题
+  updateCheck: true   # 有新版本时在 Console 提示
+  autoUpdate: false   # 直接拉取，而不是只提示
+  updateSource: ""    # 自定义检查更新的地址
 ```
+
+### 更新
+
+插件管理器**没有更新功能**——已安装的包不能在界面上覆盖安装，代码里也**完全没有** `outdated` / `upgrade` / `checkForUpdate` 这类路径。
+
+所以宿主半包**自己检查**：每次启动问一次**你 profile 配置的 registry**，有新版就在 Console 说一句。
+
+```
+[transparent] v1.2.0 is available (running 1.1.0) — set autoUpdate: true to fetch it automatically
+```
+
+检查只花一个小请求，**失败是静默的**（离线、私有源、线路不通——都不值得报警告）。
+
+⚠️ **`autoUpdate` 默认关闭，是刻意的。** 打开后插件会调用插件管理器的 `installBundle`，**那会重写你的 profile**——中途失败会**把插件弄没**。这个风险不该由默认值承担。无论开关如何，**真正跑上新版本都靠重启**。
+
+**工作副本永远不会被"更新"**：只有装在 `node_modules` 下才检查，所以从仓库直接跑不会用发布包覆盖你的源码。
+
+`updateSource` 可以把检查指向别处——任何返回 `{"version":"x.y.z"}` 的地址（插件会自动拼 `/latest`）。registry 连不上时有用。
 
 ### darkTheme
 

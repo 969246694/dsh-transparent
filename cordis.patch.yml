@@ -24,7 +24,24 @@
       #   to true. It writes the durable `ui-theme.preference` setting through
       #   the settings service; uninstalling the plugin does NOT put the
       #   previous value back, so set this to false to leave the theme alone.
+      #
+      # updateCheck: ask the registry once per start whether a newer version
+      #   exists, and say so in the console if it does. One small request, and a
+      #   failure is silent. Skipped entirely unless the package is installed
+      #   under node_modules, so a working copy is never "updated".
+      #
+      # autoUpdate: actually fetch the newer version instead of just mentioning
+      #   it. Off by default on purpose - this rewrites the profile, and a
+      #   failure part way through leaves the plugin removed. Requires a restart
+      #   to take effect either way.
+      #
+      # updateSource: override where the version is read from. Point it at any
+      #   URL serving {"version":"x.y.z"} (the plugin appends /latest). Useful
+      #   when the registry is unreachable, e.g. behind a slow or blocked route.
       config:
         alpha: 215
         darkTheme: true
+        updateCheck: true
+        autoUpdate: false
+        updateSource: ""
 

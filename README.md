@@ -90,7 +90,39 @@ startup — there is no script to run by hand.
 config:
   alpha: 215          # whole-window opacity
   darkTheme: true     # pin the interface to the dark theme
+  updateCheck: true   # say so when a newer version exists
+  autoUpdate: false   # fetch it instead of just saying so
+  updateSource: ""    # override where the version is read from
 ```
+
+### Updates
+
+The plugin manager has **no update action** — an installed bundle cannot be
+re-installed over itself through the GUI, and there is no `outdated`, `upgrade`
+or `checkForUpdate` code path anywhere in it. So the host half checks for itself:
+once per start it asks the registry your profile is configured to use, and says
+so in the console when a newer version exists.
+
+```
+[transparent] v1.2.0 is available (running 1.1.0) — set autoUpdate: true to fetch it automatically
+```
+
+The check costs one small request and a failure is silent (offline machine,
+private registry, blocked route — none of them are worth a warning).
+
+**`autoUpdate` is off by default on purpose.** Turning it on makes the plugin
+call the plugin manager's own `installBundle`, which rewrites your profile — and
+a failure part way through leaves the plugin removed. That is not a risk to take
+on someone's behalf by default. Whether or not it is on, **a restart is what
+actually runs the new version**.
+
+A working copy is never "updated": the check is skipped unless the package is
+installed under `node_modules`, so running from a checkout cannot overwrite your
+source tree with a published tarball.
+
+`updateSource` points the check somewhere other than the registry — any URL
+serving `{"version":"x.y.z"}` (the plugin appends `/latest`). Useful when the
+registry is unreachable.
 
 | alpha | Effect |
 |---|---|
