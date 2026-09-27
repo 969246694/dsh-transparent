@@ -26,6 +26,10 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
+    "lib/client.template.js",
+    "dsh-transparent.css",
+    "build.mjs",
+    "verify.mjs",
     "cordis.patch.yml",
     "assets/window-glass.ps1",
     "README.md",
@@ -36,7 +40,8 @@
   "scripts": {
     "build": "node build.mjs",
     "verify": "node verify.mjs",
-    "test": "node build.mjs && node verify.mjs"
+    "test": "node build.mjs && node verify.mjs",
+    "prepublishOnly": "node build.mjs && node verify.mjs"
   },
   "dependencies": {},
   "peerDependencies": {},
@@ -51,5 +56,16 @@
         "zh": "窗口透明"
       }
     }
+  },
+  "repository": {
+    "url": "git+https://github.com/969246694/dsh-transparent.git",
+    "type": "git"
+  },
+  "homepage": "https://github.com/969246694/dsh-transparent#readme",
+  "bugs": {
+    "url": "https://github.com/969246694/dsh-transparent/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
