@@ -1,0 +1,55 @@
+{
+  "name": "dsh-transparent",
+  "version": "1.0.0",
+  "description": "Unofficial DSH desktop plugin: a translucent window that shows the desktop wallpaper, plus a refracting liquid-glass composer. Windows only for the transparency half.",
+  "type": "module",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "cordis-plugin",
+    "liquid-glass",
+    "transparency",
+    "windows"
+  ],
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "assets/window-glass.ps1",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE",
+    "NOTICE.md"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "verify": "node verify.mjs",
+    "test": "node build.mjs && node verify.mjs"
+  },
+  "dependencies": {},
+  "peerDependencies": {},
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "title": {
+        "en": "Transparent Window",
+        "zh": "窗口透明"
+      }
+    }
+  }
+}

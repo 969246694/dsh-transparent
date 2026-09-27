@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # The plugin has no dependencies, so there is nothing to install. That is
+      # a feature worth keeping: no supply chain, no lockfile, no build step for
+      # the user.
+      - name: Verify
+        run: node verify.mjs
+
+      # verify.mjs already rebuilds in memory and compares against the committed
+      # bundle, so a stale lib/client.js fails the run. This second pass makes
+      # the intent explicit and catches a build that is not even reproducible.
+      - name: Build must be reproducible
+        run: |
+          node build.mjs
+          git diff --exit-code -- lib/client.js
+
+  powershell-parse:
+    # window-glass.ps1 must parse under Windows PowerShell 5.1, which reads
+    # scripts as ANSI unless they carry a UTF-8 BOM. A stray non-ASCII byte in a
+    # string broke parsing once already, so it is checked rather than trusted.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Script must be pure ASCII
+        shell: pwsh
+        run: |
+          $raw = Get-Content assets/window-glass.ps1 -Raw
+          $bad = @()
+          foreach ($ch in $raw.ToCharArray()) { if ([int]$ch -gt 126) { $bad += $ch } }
+          if ($bad.Count -gt 0) {
+            Write-Error "non-ASCII characters found: $($bad | Select-Object -Unique)"
+            exit 1
+          }
+          Write-Host "pure ASCII"
+
+      - name: Script must parse under Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $errors = $null
+          [void][System.Management.Automation.PSParser]::Tokenize((Get-Content assets/window-glass.ps1 -Raw), [ref]$errors)
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "parses cleanly"

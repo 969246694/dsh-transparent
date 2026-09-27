@@ -1,0 +1,22 @@
+# Bundle patch for dsh-transparent.
+#
+# Same shape as dsh-glass-ui: this row points at the HOST half (the package
+# name). It must never point at `dsh-transparent/client` - that resolves to a
+# classic browser script, which the host cannot import; the failure surfaces as
+# a bare "failed to import" that says nothing about the real cause.
+#
+# The browser half is located through package.json exports["./client"] and
+# delivered to the page by the /plugins bundle route.
+#
+# Keep this file pure ASCII: a `//` first line (invalid in YAML) and full-width
+# punctuation in these comments broke the overlay parser once already.
+
+- insert:
+    - id: transparent
+      name: "dsh-transparent"
+      # alpha: whole-window opacity applied by the host half at startup.
+      #   255 = do not fade the window at all (content stays crisp)
+      #   215 = wallpaper visible, content slightly faded  <- default
+      #   150 = wallpaper obvious, content clearly faded
+      config:
+        alpha: 215
