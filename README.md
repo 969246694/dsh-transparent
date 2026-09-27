@@ -48,12 +48,39 @@ times; see *Known limitations*.
 
 ## Install
 
+**From npm** — recommended, and the only option that works without reaching
+GitHub. In the *Add plugin* dialog set the install source to **中国⼤陆镜像源**
+(`registry.npmmirror.com`) and enter the package name:
+
+```
+dsh-transparent
+```
+
+**From GitHub** — needs working access to github.com:
+
+```
+plugin_manager install_bundle  https://github.com/969246694/dsh-transparent
+```
+
+Pin the release instead of tracking `main`:
+
+```
+plugin_manager install_bundle  https://github.com/969246694/dsh-transparent#v1.0.0
+```
+
+**From a local path** — for a checkout or an unpacked tarball:
+
 ```
 plugin_manager install_bundle  <path-to-this-repo>
 ```
 
 Then restart the client. Window transparency is applied automatically at
 startup — there is no script to run by hand.
+
+> **Why the mirror only helps the npm route:** a GitHub URL is classified as a
+> *git* spec and fetched by `git`, bypassing npm entirely. The install-source
+> setting therefore has no effect on it. That is why this package is published
+> to npm at all.
 
 ## Configuration
 

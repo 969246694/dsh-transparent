@@ -33,11 +33,33 @@
 
 ## 安装
 
+**从 npm 装（推荐）** —— 这是**唯一不需要访问 GitHub** 的方式。在「添加插件」对话框里，把**安装源**设为 **中国大陆镜像源**（`registry.npmmirror.com`），然后填**包名**：
+
+```
+dsh-transparent
+```
+
+**从 GitHub 装** —— 需要能访问 github.com：
+
+```
+plugin_manager install_bundle  https://github.com/969246694/dsh-transparent
+```
+
+锁定版本而不是跟随 `main`：
+
+```
+plugin_manager install_bundle  https://github.com/969246694/dsh-transparent#v1.0.0
+```
+
+**从本地路径装** —— 适用于克隆下来的仓库或解压出的压缩包：
+
 ```
 plugin_manager install_bundle  <本仓库路径>
 ```
 
 然后重启客户端。窗口透明度会**在启动时自动应用**，不需要手动跑任何脚本。
+
+> **为什么镜像源只对 npm 那条路有用**：GitHub 地址被归类为 **git 规格**，由 `git` 拉取，**完全绕过 npm**——所以「安装源」那个设置对它无效。这也正是这个包要发布到 npm 的原因。
 
 ## 配置
 
