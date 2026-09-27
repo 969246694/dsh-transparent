@@ -2,21 +2,49 @@
 
 [中文](README.zh-CN.md) | **English**
 
-See through the DSH desktop window to your wallpaper, and give the composer a
-liquid-glass surface.
+Make the DSH desktop window translucent so your wallpaper shows through.
 
 An unofficial plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
-desktop client. **Windows only** for the transparency half.
+desktop client. **Windows only.**
+
+It also contains a genuinely refracting liquid-glass implementation for the
+composer. **Be aware before installing: on this app's layout the refraction is
+barely visible**, because nothing scrolls behind the composer. What you will
+actually see is a translucent window. Read *Known limitations* below — it is
+short and it is the honest part.
 
 ---
 
 ## What it does
 
-| Effect | Where it is implemented |
-|---|---|
-| Window becomes translucent, wallpaper shows through | Host half (Node) spawns a PowerShell helper that sets Win32/DWM window attributes |
-| The app's opaque background is cleared | Browser half (CSS) |
-| The composer becomes liquid glass — backdrop **refracted**, not just blurred | Browser half: an SVG displacement map generated at runtime, referenced from `backdrop-filter` |
+| Effect | Status | Where it is implemented |
+|---|---|---|
+| Window becomes translucent, wallpaper shows through | **Works** | Host half (Node) spawns a PowerShell helper that sets Win32/DWM window attributes |
+| The app's opaque background is cleared | **Works** | Browser half (CSS) |
+| The composer refracts its backdrop instead of just blurring it | **Implemented; barely visible in practice** | Browser half: an SVG displacement map generated at runtime, referenced from `backdrop-filter: url()` |
+
+### Why the glass is barely visible
+
+Refraction needs **something behind it to bend**. A displacement map moving a
+flat colour does nothing at all — every pixel is identical, so moving them
+changes nothing.
+
+Two things then have to be true for the effect to show, and only the first is:
+
+1. **The page must not be opaque.** ✅ The wallpaper does reach the screen, via
+   the translucent window.
+2. **Content must pass behind the composer.** ❌ The composer occupies its own row
+   at the bottom of the window and the message list ends above it. Nothing ever
+   scrolls behind it, so the lens has nothing to bend.
+
+The refraction itself is real and verified — the composer's `backdrop-filter`
+resolves to `url(#dsh-transparent-liquid)`, and rendering the same filter over
+scrolling text produces obvious distortion. It is the app's layout that keeps
+that text out of the lens.
+
+Making it visible means changing the application's layout so the message list
+runs behind the composer. That was attempted three times and reverted three
+times; see *Known limitations*.
 
 ## Install
 

@@ -1,7 +1,7 @@
 {
   "name": "dsh-transparent",
   "version": "1.0.0",
-  "description": "Unofficial DSH desktop plugin: a translucent window that shows the desktop wallpaper, plus a refracting liquid-glass composer. Windows only for the transparency half.",
+  "description": "Unofficial DSH desktop plugin: makes the window translucent so the desktop wallpaper shows through. Windows only. Also ships a genuinely refracting liquid-glass composer, though the app's layout keeps it barely visible.",
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",
