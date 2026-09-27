@@ -88,7 +88,8 @@ startup — there is no script to run by hand.
 
 ```yaml
 config:
-  alpha: 215      # whole-window opacity
+  alpha: 215          # whole-window opacity
+  darkTheme: true     # pin the interface to the dark theme
 ```
 
 | alpha | Effect |
@@ -96,6 +97,21 @@ config:
 | `255` | Window stays fully opaque. Wallpaper not visible; content at full crispness |
 | `215` | **Default.** Wallpaper visible, content slightly faded |
 | `150` | Wallpaper obvious, content clearly faded |
+
+### darkTheme
+
+Translucency over a light interface looks washed out — the wallpaper bleeds
+through as grey rather than as glass — so the plugin pins the theme to dark on
+activation. Default `true`; set it to `false` to leave your choice alone.
+
+It writes the durable `ui-theme.preference` setting through the host's settings
+service, which is why the change survives a restart and shows up in the settings
+UI. It reads first and does nothing if the theme is already dark, and it passes
+the revision it read back to the write, so a change you made in the meantime is
+not silently overwritten.
+
+**Uninstalling the plugin does not put the previous preference back.** If you
+want your own choice respected, set `darkTheme: false`.
 
 Design tokens live in `dsh-transparent.css`:
 

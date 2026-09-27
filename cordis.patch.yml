@@ -18,5 +18,13 @@
       #   255 = do not fade the window at all (content stays crisp)
       #   215 = wallpaper visible, content slightly faded  <- default
       #   150 = wallpaper obvious, content clearly faded
+      #
+      # darkTheme: pin the interface to the dark theme on activation.
+      #   Translucency over a light interface looks washed out, so this defaults
+      #   to true. It writes the durable `ui-theme.preference` setting through
+      #   the settings service; uninstalling the plugin does NOT put the
+      #   previous value back, so set this to false to leave the theme alone.
       config:
         alpha: 215
+        darkTheme: true
+
