@@ -28,12 +28,11 @@
       # updateCheck: ask the registry once per start whether a newer version
       #   exists, and say so in the console if it does. One small request, and a
       #   failure is silent. Skipped entirely unless the package is installed
-      #   under node_modules, so a working copy is never "updated".
+      #   under node_modules, so a working copy is never checked.
       #
-      # autoUpdate: actually fetch the newer version instead of just mentioning
-      #   it. Off by default on purpose - this rewrites the profile, and a
-      #   failure part way through leaves the plugin removed. Requires a restart
-      #   to take effect either way.
+      #   This only reports. Nothing in the application announces a new version
+      #   on its own, which is the whole reason for the check; installing one is
+      #   a reinstall in the GUI, or install_bundle <name> on the command line.
       #
       # updateSource: override where the version is read from. Point it at any
       #   URL serving {"version":"x.y.z"} (the plugin appends /latest). Useful
@@ -42,6 +41,6 @@
         alpha: 215
         darkTheme: true
         updateCheck: true
-        autoUpdate: false
         updateSource: ""
+
 

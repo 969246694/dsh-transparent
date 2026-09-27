@@ -91,38 +91,35 @@ config:
   alpha: 215          # whole-window opacity
   darkTheme: true     # pin the interface to the dark theme
   updateCheck: true   # say so when a newer version exists
-  autoUpdate: false   # fetch it instead of just saying so
   updateSource: ""    # override where the version is read from
 ```
 
 ### Updates
 
-The plugin manager has **no update action** — an installed bundle cannot be
-re-installed over itself through the GUI, and there is no `outdated`, `upgrade`
-or `checkForUpdate` code path anywhere in it. So the host half checks for itself:
-once per start it asks the registry your profile is configured to use, and says
-so in the console when a newer version exists.
+The plugin manager has **no update affordance and no version check** — there is
+no `outdated`, `upgrade` or `checkForUpdate` anywhere in it. Nothing in the
+application will ever tell you a newer version exists, so the host half asks
+once per start, against the registry your profile is configured to use, and says
+so in the console:
 
 ```
-[transparent] v1.2.0 is available (running 1.1.0) — set autoUpdate: true to fetch it automatically
+[transparent] v1.2.1 is available (running 1.2.0) — reinstall the plugin to update
 ```
 
-The check costs one small request and a failure is silent (offline machine,
-private registry, blocked route — none of them are worth a warning).
+The check costs one small request and a failure is silent — an offline machine, a
+private registry or a blocked route are none of them worth a warning.
 
-**`autoUpdate` is off by default on purpose.** Turning it on makes the plugin
-call the plugin manager's own `installBundle`, which rewrites your profile — and
-a failure part way through leaves the plugin removed. That is not a risk to take
-on someone's behalf by default. Whether or not it is on, **a restart is what
-actually runs the new version**.
+**It only reports. It never installs.** To update: reinstall through the plugin
+manager, or run `install_bundle dsh-transparent`, which re-runs pnpm and takes
+the newest version in range. Either way the new version starts on the next
+restart.
 
-A working copy is never "updated": the check is skipped unless the package is
-installed under `node_modules`, so running from a checkout cannot overwrite your
-source tree with a published tarball.
+A working copy is never checked: unless the package sits under `node_modules` —
+where a published install lives — the check is skipped, so running from a
+checkout cannot be mistaken for an installed release.
 
-`updateSource` points the check somewhere other than the registry — any URL
-serving `{"version":"x.y.z"}` (the plugin appends `/latest`). Useful when the
-registry is unreachable.
+`updateSource` points the check somewhere other than the registry: any URL
+serving `{"version":"x.y.z"}` (the plugin appends `/latest`).
 
 | alpha | Effect |
 |---|---|

@@ -70,27 +70,24 @@ config:
   alpha: 215          # 整窗不透明度
   darkTheme: true     # 强制界面使用黑夜主题
   updateCheck: true   # 有新版本时在 Console 提示
-  autoUpdate: false   # 直接拉取，而不是只提示
   updateSource: ""    # 自定义检查更新的地址
 ```
 
 ### 更新
 
-插件管理器**没有更新功能**——已安装的包不能在界面上覆盖安装，代码里也**完全没有** `outdated` / `upgrade` / `checkForUpdate` 这类路径。
-
-所以宿主半包**自己检查**：每次启动问一次**你 profile 配置的 registry**，有新版就在 Console 说一句。
+插件管理器**没有更新入口，也没有版本检查**——代码里完全没有 `outdated` / `upgrade` / `checkForUpdate` 这类路径。**应用本身永远不会告诉你出了新版本**，所以宿主半包每次启动问一次**你 profile 配置的 registry**，有新版就在 Console 说一句：
 
 ```
-[transparent] v1.2.0 is available (running 1.1.0) — set autoUpdate: true to fetch it automatically
+[transparent] v1.2.1 is available (running 1.2.0) — reinstall the plugin to update
 ```
 
-检查只花一个小请求，**失败是静默的**（离线、私有源、线路不通——都不值得报警告）。
+检查只花一个小请求，**失败是静默的**——离线、私有源、线路不通，都不值得报警告。
 
-⚠️ **`autoUpdate` 默认关闭，是刻意的。** 打开后插件会调用插件管理器的 `installBundle`，**那会重写你的 profile**——中途失败会**把插件弄没**。这个风险不该由默认值承担。无论开关如何，**真正跑上新版本都靠重启**。
+**它只提示，从不安装。** 要更新：在插件管理器里重装一次，或执行 `install_bundle dsh-transparent`——那会重跑 pnpm 并取范围内的最新版。无论哪种方式，**新版本都要重启后才开始运行**。
 
-**工作副本永远不会被"更新"**：只有装在 `node_modules` 下才检查，所以从仓库直接跑不会用发布包覆盖你的源码。
+**工作副本不会被检查**：只有装在 `node_modules` 下（即发布安装的位置）才会检查，所以从仓库直接跑不会被误认为已安装的版本。
 
-`updateSource` 可以把检查指向别处——任何返回 `{"version":"x.y.z"}` 的地址（插件会自动拼 `/latest`）。registry 连不上时有用。
+`updateSource` 可以把检查指向别处——任何返回 `{"version":"x.y.z"}` 的地址（插件会自动拼 `/latest`）。
 
 ### darkTheme
 
