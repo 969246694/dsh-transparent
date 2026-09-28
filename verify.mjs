@@ -43,75 +43,53 @@ if (!existsSync(hostPath)) {
 
     /* ------------------------------------------- 1b. the Config schema ----
 
-       The settings service reads a Config schema for three things, and this
-       checks the schema against those three rather than trusting it:
+       Two things matter here, and 1.3.0 shipped getting both wrong.
 
-         isVolatilePath(schema, path)   reads .meta.volatile and .dict[key]
-         projectForm(schema, value)     reads .type and .dict
-         plainSchema(schema)            new z(schema.toJSON())
+       First: if a Config is exported at all, it must be a real schemastery
+       schema. Loading validates the config through the Standard Schema
+       interface --
 
-       The third one is reconstructed by @deepseek-ai/schemastery, which is NOT
-       installable here -- it ships inside the application bundle and does not
-       resolve from a plugin. So this checks the serialised SHAPE instead of
-       calling the real thing: every node must carry type/meta, and every parent
-       must name its children by uid, which is what the reconstruction resolves.
-       The full round-trip was verified against the real schemastery out of band;
-       what is guarded here is the part that can regress silently. */
-    const schema = mod.Config
-    if (schema === undefined) {
-      bad('exports Config (the settings UI needs it)')
+         runtime.Config['~standard'].validate(config)
+
+       -- so a hand-written object carrying only the fields the settings service
+       reads throws during load and the whole plugin is reported as 启动失败.
+       Checking for '~standard' is therefore the difference between a working
+       plugin and a broken one.
+
+       Second: the import must stay guarded. It is the only part of the host half
+       that depends on how the application resolves modules for a profile plugin.
+       Here in plain Node it does not resolve at all, which is exactly why this
+       check reports the degradation instead of failing on it -- and why the
+       schema cannot be verified further without the application. */
+    const src = readFileSync(hostPath, 'utf8')
+
+    if (/await import\('@deepseek-ai\/schemastery'\)/.test(src) && /catch\s*\{[^}]*Config = undefined/s.test(src)) {
+      ok('schemastery import is guarded', 'a resolution failure leaves the plugin running')
     } else {
-      const OPTIONS = ['alpha', 'darkTheme', 'updateCheck', 'updateSource']
+      bad('schemastery import is guarded', 'an unguarded import turns a resolution change into an outage')
+    }
 
-      const isVolatilePath = (s, path) => {
-        if (s.meta.volatile) return true
-        const [key, ...rest] = path
-        const child = key === undefined ? undefined : s.dict?.[key]
-        return child !== undefined && isVolatilePath(child, rest)
-      }
+    if (mod.Config === undefined) {
+      ok('no Config here (expected in plain Node)', 'the settings form needs the application resolver')
+    } else if (typeof mod.Config['~standard']?.validate === 'function') {
+      ok('Config is a real schemastery schema', '~standard.validate present')
+      const v = mod.Config['~standard'].validate({ alpha: 200 })
+      if (v && !('then' in v) && v.value !== undefined) ok('~standard.validate resolves synchronously')
+      else bad('~standard.validate resolves synchronously', JSON.stringify(v))
+      const keys = Object.keys(mod.Config.dict ?? {})
+      if (keys.length === 4) ok('Config declares four options', keys.join(', '))
+      else bad('Config declares four options', keys.join(', '))
+    } else {
+      bad('Config is a real schemastery schema', 'missing ~standard.validate; loading will throw')
+    }
 
-      const missing = OPTIONS.filter((k) => !isVolatilePath(schema, [k]))
-      if (missing.length === 0) ok('every option is volatile', OPTIONS.join(', '))
-      else bad('every option is volatile', `not volatile: ${missing.join(', ')}`)
-
-      const plain = OPTIONS.filter((k) => schema.dict?.[k]?.meta?.volatile !== true)
-      if (plain.length === 0) ok('leaf nodes carry meta.volatile')
-      else bad('leaf nodes carry meta.volatile', plain.join(', '))
-
-      // resolve() hands a volatile field to apply() as { get() } and an ordinary
-      // one as the bare value. Reading cfg.<field> directly would therefore
-      // revert every option to its default without any error.
-      const src = readFileSync(hostPath, 'utf8')
-      if (/readValue\s*\(/.test(src) && /typeof\s+\w+\.get\s*===\s*'function'/.test(src)) {
-        ok('apply() unwraps volatile accessors')
-      } else {
-        bad('apply() unwraps volatile accessors', 'volatile fields arrive as { get() }, not as values')
-      }
-
-      const serialised = (() => {
-        try { return schema.toJSON() } catch (error) { return { error: error.message } }
-      })()
-      if (serialised.error) {
-        bad('schema.toJSON() serialises', serialised.error)
-      } else if (typeof serialised.uid !== 'string' || typeof serialised.refs !== 'object') {
-        bad('schema.toJSON() serialises', 'expected { uid, refs }')
-      } else {
-        ok('schema.toJSON() serialises', `${Object.keys(serialised.refs).length} refs`)
-        const root = serialised.refs[serialised.uid]
-        if (root === undefined) bad('toJSON root is addressable by uid')
-        else ok('toJSON root is addressable by uid')
-        const children = Object.values(root.dict ?? {})
-        if (children.length === OPTIONS.length && children.every((uid) => serialised.refs[uid] !== undefined)) {
-          ok('toJSON names children by uid', children.join(', '))
-        } else {
-          bad('toJSON names children by uid', JSON.stringify(root.dict))
-        }
-        // volatileForm calls plainSchema on each volatile node on its own, so a
-        // toJSON() on the root alone is not enough.
-        const withoutSerialiser = OPTIONS.filter((k) => typeof schema.dict?.[k]?.toJSON !== 'function')
-        if (withoutSerialiser.length === 0) ok('every leaf serialises on its own')
-        else bad('every leaf serialises on its own', withoutSerialiser.join(', '))
-      }
+    // resolve() delivers a volatile field as { get() }, not as the value, so
+    // reading cfg.<field> directly would revert every option to its default
+    // with nothing logged anywhere.
+    if (/readValue\s*\(/.test(src) && /typeof\s+\w+\.get\s*===\s*'function'/.test(src)) {
+      ok('apply() unwraps volatile accessors')
+    } else {
+      bad('apply() unwraps volatile accessors', 'volatile fields arrive as { get() }')
     }
   } catch (error) {
     bad('host module imports cleanly', `${error.constructor.name}: ${error.message}`)
