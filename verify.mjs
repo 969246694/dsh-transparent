@@ -225,6 +225,31 @@ if (!clientPath || !existsSync(clientPath)) {
     if (plugin && typeof plugin.apply === 'function') ok('exports a mountable plugin', `name=${plugin.name}`)
     else bad('exports a mountable plugin')
 
+    /* The settings panel only appears if the browser half registers into
+       plugins.bundle.config with the bundle's package name. A registered Config
+       schema renders NOTHING on its own -- which is exactly how a working schema
+       ended up invisible on the Plugins page. */
+    {
+      const src = readFileSync(clientPath, 'utf8')
+      if (/inject\(\s*'plugins\.bundle\.config'/.test(src) && /name:\s*'plugins\.bundle\.config'/.test(src)) {
+        ok('registers a configuration panel')
+      } else {
+        bad('registers a configuration panel', 'the Plugins page draws a bundle form only for a bundle that registered one')
+      }
+      if (/key:\s*PACKAGE_NAME/.test(src)) ok('panel is keyed by the package name')
+      else bad('panel is keyed by the package name')
+      if (/ctx\.inject\(\['slots'\]/.test(src)) {
+        ok('slot service is optional', 'a missing slots service must not stop the window being made translucent')
+      } else {
+        bad('slot service is optional', 'declaring it in the plugin inject list would gate the whole plugin')
+      }
+      if (/remote\.settings/.test(src) && /\.mutate\(/.test(src)) {
+        ok('writes go through ctx.remote.settings')
+      } else {
+        bad('writes go through ctx.remote.settings')
+      }
+    }
+
     if (plugin && typeof plugin.apply === 'function') {
       plugin.apply({ effect: (fn) => { globalThis.__teardown = fn; return () => {} } })
       ok('apply() ran without throwing')
