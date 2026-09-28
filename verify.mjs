@@ -238,10 +238,23 @@ if (!clientPath || !existsSync(clientPath)) {
       }
       if (/key:\s*PACKAGE_NAME/.test(src)) ok('panel is keyed by the package name')
       else bad('panel is keyed by the package name')
-      if (/ctx\.inject\(\['slots'\]/.test(src)) {
-        ok('slot service is optional', 'a missing slots service must not stop the window being made translucent')
+      /* The framework refuses to hand over a service that was not declared:
+
+           Cannot get property "slots" without inject
+
+       An earlier version tried to treat the slot service as optional and got a
+       silent no-op: neither direct access nor the ctx.inject child-fiber form
+       worked without the declaration. Guarding it here is the point, because
+       dropping it fails quietly. */
+      if (/inject:\s*\['slots'\]/.test(src) && /exports\.inject\s*=/.test(src)) {
+        ok('declares inject slots', 'the framework will not expose the service otherwise')
       } else {
-        bad('slot service is optional', 'declaring it in the plugin inject list would gate the whole plugin')
+        bad('declares inject slots', 'without it ctx.slots throws and the panel never registers')
+      }
+      if (/settings panel: /.test(src)) {
+        ok('panel failures are reported on the console', 'a silent no-op cost three releases')
+      } else {
+        bad('panel failures are reported on the console')
       }
       if (/remote\.settings/.test(src) && /\.mutate\(/.test(src)) {
         ok('writes go through ctx.remote.settings')
