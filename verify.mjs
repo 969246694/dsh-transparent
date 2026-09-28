@@ -246,8 +246,8 @@ if (!clientPath || !existsSync(clientPath)) {
        silent no-op: neither direct access nor the ctx.inject child-fiber form
        worked without the declaration. Guarding it here is the point, because
        dropping it fails quietly. */
-      if (/inject:\s*\['slots'\]/.test(src) && /exports\.inject\s*=/.test(src)) {
-        ok('declares inject slots', 'the framework will not expose the service otherwise')
+      if (/inject:\s*\['slots'[^\]]*\]/.test(src) && /exports\.inject\s*=/.test(src)) {
+        ok('declares inject', 'the framework will not expose an undeclared service')
       } else {
         bad('declares inject slots', 'without it ctx.slots throws and the panel never registers')
       }
@@ -371,4 +371,5 @@ head('4. the committed bundle matches the template')
 
 head(failures === 0 ? 'ALL CHECKS PASSED' : `${failures} CHECK(S) FAILED`)
 process.exit(failures === 0 ? 0 : 1)
+
 
