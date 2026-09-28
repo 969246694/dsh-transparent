@@ -84,7 +84,10 @@ startup — there is no script to run by hand.
 
 ## Configuration
 
-`cordis.patch.yml`:
+**These options appear in the application's own settings UI** — no YAML editing
+needed. The plugin declares a `Config` schema, which is how a plugin gets a form.
+
+`cordis.patch.yml` still works and provides the initial values:
 
 ```yaml
 config:
@@ -93,6 +96,18 @@ config:
   updateCheck: true   # say so when a newer version exists
   updateSource: ""    # override where the version is read from
 ```
+
+> **Why the schema is hand-written.** Declaring a schema normally means
+> `z.object({...})` from `@deepseek-ai/schemastery` — but a plugin installed
+> under `<profile>/node_modules` **cannot import that package**. It ships inside
+> the application bundle and does not resolve from there
+> (`ERR_MODULE_NOT_FOUND`). So the schema is a plain object shaped the way the
+> settings service reads it: `type`, `dict`, `meta.volatile`, and a `toJSON()`
+> returning schemastery's `{ uid, refs }` form. The plugin stays dependency-free.
+>
+> Only fields marked volatile are editable in the UI, and volatile changes the
+> shape a field is delivered in — `apply()` receives `{ get() }` rather than the
+> value, which is why every option is read through a small unwrapping helper.
 
 ### Updates
 

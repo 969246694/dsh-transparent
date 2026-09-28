@@ -63,7 +63,9 @@ plugin_manager install_bundle  <本仓库路径>
 
 ## 配置
 
-`cordis.patch.yml`：
+**这些选项会出现在应用自己的设置界面里**——不用手改 YAML。插件通过声明 `Config` 结构来获得表单。
+
+`cordis.patch.yml` 依然有效，并提供初始值：
 
 ```yaml
 config:
@@ -72,6 +74,12 @@ config:
   updateCheck: true   # 有新版本时在 Console 提示
   updateSource: ""    # 自定义检查更新的地址
 ```
+
+> **为什么这个结构是手写的。** 声明配置结构通常要写 `z.object({...})`（来自 `@deepseek-ai/schemastery`），但装在 `<profile>/node_modules` 下的插件**根本 import 不到这个包**——它在应用包内部，从插件位置解析会直接 `ERR_MODULE_NOT_FOUND`。
+>
+> 所以这里用一个普通对象，形如设置服务读取的样子：`type`、`dict`、`meta.volatile`，以及返回 schemastery `{ uid, refs }` 格式的 `toJSON()`。**插件保持零依赖。**
+>
+> 另外：只有标了 volatile 的字段才能在界面上编辑，**而 volatile 会改变字段的传递形态**——`apply()` 收到的是 `{ get() }` 而不是值本身。所以每个选项都经过一个小helper解包。
 
 ### 更新
 

@@ -40,6 +40,79 @@ if (!existsSync(hostPath)) {
     ok('host module imports cleanly')
     if (typeof mod.apply === 'function') ok('exports apply()')
     else bad('exports apply()')
+
+    /* ------------------------------------------- 1b. the Config schema ----
+
+       The settings service reads a Config schema for three things, and this
+       checks the schema against those three rather than trusting it:
+
+         isVolatilePath(schema, path)   reads .meta.volatile and .dict[key]
+         projectForm(schema, value)     reads .type and .dict
+         plainSchema(schema)            new z(schema.toJSON())
+
+       The third one is reconstructed by @deepseek-ai/schemastery, which is NOT
+       installable here -- it ships inside the application bundle and does not
+       resolve from a plugin. So this checks the serialised SHAPE instead of
+       calling the real thing: every node must carry type/meta, and every parent
+       must name its children by uid, which is what the reconstruction resolves.
+       The full round-trip was verified against the real schemastery out of band;
+       what is guarded here is the part that can regress silently. */
+    const schema = mod.Config
+    if (schema === undefined) {
+      bad('exports Config (the settings UI needs it)')
+    } else {
+      const OPTIONS = ['alpha', 'darkTheme', 'updateCheck', 'updateSource']
+
+      const isVolatilePath = (s, path) => {
+        if (s.meta.volatile) return true
+        const [key, ...rest] = path
+        const child = key === undefined ? undefined : s.dict?.[key]
+        return child !== undefined && isVolatilePath(child, rest)
+      }
+
+      const missing = OPTIONS.filter((k) => !isVolatilePath(schema, [k]))
+      if (missing.length === 0) ok('every option is volatile', OPTIONS.join(', '))
+      else bad('every option is volatile', `not volatile: ${missing.join(', ')}`)
+
+      const plain = OPTIONS.filter((k) => schema.dict?.[k]?.meta?.volatile !== true)
+      if (plain.length === 0) ok('leaf nodes carry meta.volatile')
+      else bad('leaf nodes carry meta.volatile', plain.join(', '))
+
+      // resolve() hands a volatile field to apply() as { get() } and an ordinary
+      // one as the bare value. Reading cfg.<field> directly would therefore
+      // revert every option to its default without any error.
+      const src = readFileSync(hostPath, 'utf8')
+      if (/readValue\s*\(/.test(src) && /typeof\s+\w+\.get\s*===\s*'function'/.test(src)) {
+        ok('apply() unwraps volatile accessors')
+      } else {
+        bad('apply() unwraps volatile accessors', 'volatile fields arrive as { get() }, not as values')
+      }
+
+      const serialised = (() => {
+        try { return schema.toJSON() } catch (error) { return { error: error.message } }
+      })()
+      if (serialised.error) {
+        bad('schema.toJSON() serialises', serialised.error)
+      } else if (typeof serialised.uid !== 'string' || typeof serialised.refs !== 'object') {
+        bad('schema.toJSON() serialises', 'expected { uid, refs }')
+      } else {
+        ok('schema.toJSON() serialises', `${Object.keys(serialised.refs).length} refs`)
+        const root = serialised.refs[serialised.uid]
+        if (root === undefined) bad('toJSON root is addressable by uid')
+        else ok('toJSON root is addressable by uid')
+        const children = Object.values(root.dict ?? {})
+        if (children.length === OPTIONS.length && children.every((uid) => serialised.refs[uid] !== undefined)) {
+          ok('toJSON names children by uid', children.join(', '))
+        } else {
+          bad('toJSON names children by uid', JSON.stringify(root.dict))
+        }
+        // volatileForm calls plainSchema on each volatile node on its own, so a
+        // toJSON() on the root alone is not enough.
+        const withoutSerialiser = OPTIONS.filter((k) => typeof schema.dict?.[k]?.toJSON !== 'function')
+        if (withoutSerialiser.length === 0) ok('every leaf serialises on its own')
+        else bad('every leaf serialises on its own', withoutSerialiser.join(', '))
+      }
+    }
   } catch (error) {
     bad('host module imports cleanly', `${error.constructor.name}: ${error.message}`)
   }
