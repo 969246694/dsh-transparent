@@ -63,14 +63,19 @@ if (!existsSync(hostPath)) {
        schema cannot be verified further without the application. */
     const src = readFileSync(hostPath, 'utf8')
 
-    if (/await import\('@deepseek-ai\/schemastery'\)/.test(src) && /catch\s*\{[^}]*Config = undefined/s.test(src)) {
-      ok('schemastery import is guarded', 'a resolution failure leaves the plugin running')
+    if (/await import\('\.\/vendor\/schemastery\.mjs'\)/.test(src) && /catch\s*\{[^}]*Config = undefined/s.test(src)) {
+      ok('schema is vendored and guarded', 'a failure leaves the plugin running rather than failing to start')
     } else {
-      bad('schemastery import is guarded', 'an unguarded import turns a resolution change into an outage')
+      bad('schema is vendored and guarded', 'the application cannot resolve schemastery for a profile plugin')
     }
 
+    const vendored = ['cosmokit.mjs', 'schemastery.mjs', 'schemastery.LICENSE', 'cosmokit.LICENSE']
+    const absent = vendored.filter((f) => !existsSync(resolve(here, 'lib/vendor', f)))
+    if (absent.length === 0) ok('vendored files are present', vendored.length + ' files')
+    else bad('vendored files are present', 'missing: ' + absent.join(', '))
+
     if (mod.Config === undefined) {
-      ok('no Config here (expected in plain Node)', 'the settings form needs the application resolver')
+      bad('Config is available', 'the vendored copy should always resolve; the settings form needs it')
     } else if (typeof mod.Config['~standard']?.validate === 'function') {
       ok('Config is a real schemastery schema', '~standard.validate present')
       const v = mod.Config['~standard'].validate({ alpha: 200 })
@@ -79,6 +84,17 @@ if (!existsSync(hostPath)) {
       const keys = Object.keys(mod.Config.dict ?? {})
       if (keys.length === 4) ok('Config declares four options', keys.join(', '))
       else bad('Config declares four options', keys.join(', '))
+      // resolve() delivers a volatile field as { get() }, so a schema that
+      // reports plain values would mean the option list is wrong.
+      const got = mod.Config['~standard'].validate({ alpha: 200 })
+      if (typeof got.value?.alpha?.get === 'function' && got.value.alpha.get() === 200) {
+        ok('volatile fields resolve to accessors', 'alpha.get() === 200')
+      } else {
+        bad('volatile fields resolve to accessors', JSON.stringify(got.value?.alpha))
+      }
+      const dflt = mod.Config['~standard'].validate({})
+      if (dflt.value?.alpha?.get?.() === 215) ok('defaults are applied', 'alpha defaults to 215')
+      else bad('defaults are applied', JSON.stringify(dflt.value?.alpha?.get?.()))
     } else {
       bad('Config is a real schemastery schema', 'missing ~standard.validate; loading will throw')
     }

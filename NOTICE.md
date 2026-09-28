@@ -45,3 +45,26 @@ invoked through `powershell.exe`.
 
 On other platforms the browser half still works; only the window translucency
 is skipped. See the README for details.
+
+---
+
+## 3. 打包进来的第三方代码（lib/vendor/）
+
+`lib/vendor/` 下的两个文件不是本项目的代码，是为了让插件**零依赖**而内置的：
+
+| 文件 | 来源 | 版本 | 许可 |
+|---|---|---|---|
+| schemastery.mjs | @deepseek-ai/schemastery | 3.18.4 | MIT |
+| cosmokit.mjs | @deepseek-ai/cosmokit | 1.8.5 | MIT |
+
+两份许可证原文就在同目录下（`schemastery.LICENSE` / `cosmokit.LICENSE`）。
+
+**为什么要打包**：设置界面需要 `Config` 结构，而它**必须是真正的 schemastery schema**——DSH 在加载时会用 Standard Schema 接口校验配置：
+
+``js
+runtime.Config['~standard'].validate(config)
+``
+
+而装在 `<profile>/node_modules` 下的插件**无法 import 应用的 schemastery**（实测，在运行中的应用里也是 `ERR_MODULE_NOT_FOUND`）。所以把这两个模块内置，只改了一处 import 路径。
+
+唯一的改动：`schemastery.mjs` 里 `from "@deepseek-ai/cosmokit"` → `from "./cosmokit.mjs"`。
